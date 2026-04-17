@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html ng-app="devHealthApp">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dev Health Dashboard</title>
+  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.3/angular.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body ng-controller="DashboardController as vm">
+
+  <header class="header">
+    <h1>Dev Health Dashboard</h1>
+    <span class="subtitle">GitHub Repo Analyzer</span>
+  </header>
+
+  <main class="container">
+
+    <!-- Search bar -->
+    <section class="search-card">
+      <div class="search-row">
+        <input type="text" ng-model="vm.owner" placeholder="owner (e.g. khatiwadaaa)" />
+        <span class="slash">/</span>
+        <input type="text" ng-model="vm.repo"  placeholder="repo  (e.g. cf-stats)" />
+        <button ng-click="vm.analyze()" ng-disabled="vm.loading" class="btn-primary">
+          {{ vm.loading ? 'Analyzing...' : 'Analyze' }}
+        </button>
+      </div>
+      <p class="error" ng-if="vm.error">{{ vm.error }}</p>
+    </section>
+
+    <!-- Previous scans list -->
+    <section class="scans-list" ng-if="vm.allScans.length">
+      <h2>Previous Scans</h2>
+      <div class="scan-chips">
+        <span class="chip"
+              ng-repeat="s in vm.allScans"
+              ng-click="vm.loadScan(s.owner, s.repo)"
+              ng-class="{'chip-active': vm.result && vm.result.owner===s.owner && vm.result.repo===s.repo}">
+          {{ s.owner }}/{{ s.repo }}
+          <span class="score-badge" ng-class="vm.scoreClass(s.health_score)">{{ s.health_score }}</span>
+        </span>
+      </div>
+    </section>
+
+    <!-- Result dashboard -->
+    <section ng-if="vm.result" class="result-grid">
+
+      <!-- Health score -->
+      <div class="card score-card">
+        <div class="score-ring" ng-class="vm.scoreClass(vm.result.health_score)">
+          <span class="score-number">{{ vm.result.health_score }}</span>
+          <span class="score-label">/ 100</span>
+        </div>
+        <h3>{{ vm.result.owner }}/{{ vm.result.repo }}</h3>
+        <p class="desc">{{ vm.result.description || 'No description' }}</p>
+        <div class="meta-row">
+          <span>⭐ {{ vm.result.stars }}</span>
+          <span>🍴 {{ vm.result.forks }}</span>
+        </div>
+      </div>
+
+      <!-- Commit stats -->
+      <div class="card">
+        <h3>Commits</h3>
+        <div class="stat-row">
+          <div class="stat">
+            <span class="stat-val">{{ vm.result.commits.total_commits }}</span>
+            <span class="stat-lbl">Total</span>
+          </div>
+          <div class="stat">
+            <span class="stat-val">{{ vm.result.commits.unique_authors }}</span>
+            <span class="stat-lbl">Authors</span>
+          </div>
+        </div>
+        <h4>Top contributors</h4>
+        <div class="contributor"
+             ng-repeat="a in vm.result.commits.top_authors">
+          <span class="author-name">{{ a.author }}</span>
+          <span class="author-count">{{ a.commit_count }} commits</span>
+        </div>
+      </div>
+
+      <!-- Issues -->
+      <div class="card">
+        <h3>Issues</h3>
+        <div class="stat-row">
+          <div class="stat">
+            <span class="stat-val open">{{ vm.result.issues.open_issues }}</span>
+            <span class="stat-lbl">Open</span>
+          </div>
+          <div class="stat">
+            <span class="stat-val closed">{{ vm.result.issues.closed_issues }}</span>
+            <span class="stat-lbl">Closed</span>
+          </div>
+          <div class="stat">
+            <span class="stat-val">{{ vm.result.issues.avg_close_hours || '—' }}</span>
+            <span class="stat-lbl">Avg close (hrs)</span>
+          </div>
+        </div>
+        <h4>Top labels</h4>
+        <div class="label-chip"
+             ng-repeat="l in vm.result.issues.top_labels">
+          {{ l.label }} <b>{{ l.count }}</b>
+        </div>
+      </div>
+
+      <!-- Languages -->
+      <div class="card">
+        <h3>Languages</h3>
+        <canvas id="langChart" height="180"></canvas>
+      </div>
+
+      <!-- CVE results -->
+      <div class="card cve-card" ng-if="vm.cve">
+        <h3>Security Scan
+          <span class="badge-safe" ng-if="vm.cve.vulnerabilities.length === 0">Clean</span>
+          <span class="badge-warn" ng-if="vm.cve.vulnerabilities.length > 0">
+            {{ vm.cve.vulnerabilities.length }} issues
+          </span>
+        </h3>
+        <p class="muted">{{ vm.cve.total_checked }} packages checked</p>
+        <div class="vuln" ng-repeat="v in vm.cve.vulnerabilities"
+             ng-class="'sev-' + v.severity.toLowerCase()">
+          <b>{{ v.cve_id }}</b> — {{ v.package }}<br>
+          <span>{{ v.description }}</span>
+        </div>
+        <p ng-if="vm.cve.vulnerabilities.length === 0" class="clean-msg">
+          No known vulnerabilities found.
+        </p>
+      </div>
+
+      <!-- Weekly trend chart -->
+      <div class="card wide-card" ng-if="vm.result.commits.weekly_trend">
+        <h3>Commit trend (last 12 weeks)</h3>
+        <canvas id="trendChart" height="100"></canvas>
+      </div>
+
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
