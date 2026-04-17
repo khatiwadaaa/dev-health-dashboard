@@ -8,7 +8,7 @@ A full-stack web application that analyzes the health of any public GitHub repos
 
 > Enter any public GitHub repo (e.g. `facebook / react`) and get a full health report in seconds.
 
-![Dashboard Preview](https://raw.githubusercontent.com/khatiwadaaa/dev-health-dashboard/main/frontend/preview.png)
+![Dashboard Preview](https://raw.githubusercontent.com/khatiwadaaa/dev-health-dashboard/data/Screenshot 2026-04-17 004034
 
 ---
 
